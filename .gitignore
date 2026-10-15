@@ -1,0 +1,22 @@
+# Python 虚拟环境
+.venv/
+venv/
+
+#作用：告诉git，这些不提交
+
+# 环境变量和密钥
+.env
+.env.*
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+
+# 测试缓存
+.pytest_cache/
+
+logs/
+
+# IDE 配置
+.idea/
+.vscode/
