@@ -1,5 +1,10 @@
+langchain-text-splitters
+langchain-openai
+langchain-core
 openai==2.6.0
 python-dotenv==1.1.1
 pytest==9.1.1
 fastapi
 uvicorn[standard]
+SQLAlchemy==2.1.5
+langchain

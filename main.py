@@ -5,6 +5,7 @@ from starlette.responses import JSONResponse
 from app.core.lifespan import lifespan
 from app.api import router as chat_router
 from app.core.logger import setup_logger
+from app.db.message_api import message_router
 from app.exceptions.custom import LLMException
 from app.middleware.request_log import request_log_middleware
 
@@ -17,7 +18,9 @@ app=FastAPI(
     version="0.1.0",
     lifespan=lifespan  #生命周期
 )
+# 注册路由
 app.include_router(chat_router)  #把子路由chat_router挂载到主app
+app.include_router(message_router)
 
 @app.get("/")
 def home():
@@ -43,5 +46,6 @@ async def llm_exception_handler(request:Request,exc:LLMException):
             "X-Request-ID": getattr(request.state, "trace_id", ""),
         },
     )
+
 # 注册Middleware
 app.middleware("http")(request_log_middleware)  # 所有接口自动记录

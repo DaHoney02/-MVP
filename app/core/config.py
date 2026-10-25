@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     DASHSCOPE_API_KEY:str
     DASHSCOPE_BASE_URL:str = "https: // dashscope.aliyuncs.com / compatible - mode / v1"
     MODEL_NAME:str="qwen3.8-flash"
+    EMBEDDING_MODEL:str="qwen3.7-text-embedding-flash"
 
     model_config = SettingsConfigDict(
         env_file=".env",

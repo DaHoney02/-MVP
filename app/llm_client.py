@@ -1,4 +1,5 @@
 import logging
+from typing import Iterator
 
 from openai import OpenAI
 
@@ -50,4 +51,47 @@ class LLMClient:
             raise LLMException(
                 code=5002,
                 message="模型服务调用失败，请稍后重试"
+            )from exc
+
+
+    # Iterator[str]---逐步产生字符串的迭代器
+    def chat_stream(self,messages)->Iterator[str]:
+        """流式调用大模型，逐段返回生成的文本"""
+        formatted_messages=[
+            message.model_dump()
+            if hasattr(message,"model_dump")  #message是否包含model_dump（）
+            else message
+            for message in messages
+        ]
+
+        try:
+            # 可以在生成器正常退出或关闭时释放上游反应
+            with self.client.chat.completions.create(
+                model=self.model,
+                messages=formatted_messages,
+                stream=True  #流式输出返回结果
+            )as response:
+                has_content=False
+
+                for chunk in response:  #逐个读取模型返回的数据块
+                    if not chunk.choices:
+                        continue
+                    content=chunk.choices[0].delta.content
+
+                    if content:
+                        has_content=True
+                        yield content  #yield:每次产生一段文本
+
+                if not has_content:
+                    raise LLMException(
+                        code=5001,
+                        message="模型返回来了空回答"
+                    )
+        except LLMException:
+            raise
+        except Exception as exc:
+            logging.exception("流式调用LLM失败")
+            raise LLMException(
+                code=5002,
+                message="模型调用失败，请稍后重试"
             )from exc

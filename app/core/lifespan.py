@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.chat_serivce import ChatService
+from app.chat_service import ChatService
 
 
 @asynccontextmanager

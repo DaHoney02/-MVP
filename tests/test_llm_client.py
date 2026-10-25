@@ -3,21 +3,20 @@ import pytest
 from fastapi.testclient import TestClient
 
 from main import app
-print("已注册的中间件：", app.user_middleware)
 from app.core.dependencies import get_chat_service
 from app.exceptions.custom import LLMException
 
 class FakeChatService:
     """模拟 ChatService，不会调用真实模型"""
 
-    def chat(self, messages):
+    def chat(self, messages,session_id=None):
         return "你好，我是 AI 助手。"
 
 
 class FailedChatService:
     """模拟模型调用失败"""
 
-    def chat(self, messages):
+    def chat(self, messages,session_id=None):
         raise LLMException(
             code=5002,
             message="模型服务调用失败，请稍后重试",

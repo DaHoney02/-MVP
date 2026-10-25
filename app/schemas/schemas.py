@@ -22,6 +22,13 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     """聊天请求模型"""
+
+    session_id:str|None=Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+        description="会话ID，不传则不启动跨请求记忆"
+    )
     messages:list[Message]=Field(
         min_length=1,
         description="聊天消息列表"
