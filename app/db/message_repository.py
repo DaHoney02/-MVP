@@ -110,7 +110,6 @@ def list_chat_messages(
 
     )
     records=db.scalars(statement).all()
-    print("records:",records)
     return [
         Message(role=record.role,content=record.content)
         for record in records

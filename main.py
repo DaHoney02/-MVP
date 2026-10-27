@@ -8,6 +8,7 @@ from app.core.logger import setup_logger
 from app.db.message_api import message_router
 from app.exceptions.custom import LLMException
 from app.middleware.request_log import request_log_middleware
+from app.db.aftercare_api import router as aftercare_router
 
 logger=setup_logger()
 
@@ -21,6 +22,7 @@ app=FastAPI(
 # 注册路由
 app.include_router(chat_router)  #把子路由chat_router挂载到主app
 app.include_router(message_router)
+app.include_router(aftercare_router)
 
 @app.get("/")
 def home():

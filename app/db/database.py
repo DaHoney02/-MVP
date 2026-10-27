@@ -1,47 +1,59 @@
-from pathlib import Path
+from typing import Generator
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy import URL, create_engine
+from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
 
-# 1.路径处理：定位项目根目录，吧sqlite db放在项目data文件夹
-PROJECT_ROOT=Path(__file__).resolve().parents[2]
-DATA_DIR=PROJECT_ROOT / "data"
-DATA_DIR.mkdir(parents=True,exist_ok=True)
-# 连接数据库   as_posix（）---把windows反斜杠\转成/,sqlit必用\
-DATABASE_URL=f"sqlite:///{(DATA_DIR / 'app.db').as_posix()}"
+from app.core.config import settings
 
-# 2.数据库引擎:负责底层连接
+# 1.构造postgreSQL连接地址
+# 使用URL.create()
+DATABASE_URL=URL.create(
+    drivername="postgresql+psycopg",
+    username=settings.POSTGRES_USER,
+    password=settings.POSTGRES_PASSWORD,
+    host=settings.POSTGRES_HOST,
+    port=settings.POSTGRES_PORT,
+    database=settings.POSTGRES_DB
+)
+
+# 2.创建SQLAlchemy Engine
+# Engine负责数据库连接池
 engine=create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread":False}
-    #connect_args：传给底层启动的参数，SQLite专属
-    # check_same_thread：fastAPI为多线程处理请求，需关闭
+    pool_pre_ping=True
 )
-
-# 3.会话工厂:用于生成数据库会话对象
+#3.创建数据库Session工厂
+# 每请求通过SessionLocal（）获取独立的session
 SessionLocal=sessionmaker(
-    bind=engine,  #绑定引擎
-    autoflush=False,  #False惯例，每次查询前自动刷新
-    autocommit=False   #默认False->手动db.commit()才写入库中，True->每步操作自动提交事务
+    bind=engine,
+    class_=Session,
+    autoflush=False,
+    expire_on_commit=True
 )
 
-# 4.ORM模型基类:所有表模型都要继承它
+# 4.ORM模型的公共基类
+# 继承Base
 class Base(DeclarativeBase):
     pass
 
-# 5.依赖函数:被fastAPI依赖注入使用,每次请求拿到db会话，自动关闭
-def get_db():
-    """为异常请求提供数据库会话，并在结束后关闭"""
+#5.FastAPI数据库依赖
+# 每个请求获取自己的Session,请求结束后关闭Session
+# Session关闭≠整个Engine，连接由连接池管理
+class Session:
+    pass
+
+
+def get_db()->Generator[Session,None,None]:
+    """向请求提供数据库会话，并在请求结束后释放会话资源"""
     db=SessionLocal()
     try:
-        yield db  #yield->生成器函数，fastAPI depends专用
+        yield db
     finally:
-        db.close()  #会话一完，就close（）
+        db.close()
 
-# 6.初始化建表函数
-def init_db():
-    """创建不存在的数据表"""
-    # 导入模型，让SQLAlchemy知道需要创建哪些表科目
-    from app.db import models
+#6.
+def init_db()->None:
+    """开发或临时测试时创还能不存在的数据表"""
+    from app.db import models  # 确保模型已注册到 Base.metadata
 
     Base.metadata.create_all(bind=engine)

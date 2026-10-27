@@ -11,8 +11,7 @@ from app.chat_service import ChatService
 async def lifespan(app:FastAPI):
     # =====启动=======
     print("服务启动")
-    #创建共享对象  app.state---应用级
-    app.state.service=ChatService()
+
 
     yield
 

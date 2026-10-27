@@ -26,7 +26,7 @@ class ChatService:
 
         if session_id:
             if self.db is not None:
-                # 生产API使用SQLite历史记录
+                # PostgreSQL 历史记录
                 history=list_chat_messages(self.db,session_id)
             else:
                 # 保留内存存储行为
@@ -116,25 +116,22 @@ class ChatService:
             if callable(close):
                 close()
 
-        # 只有正常完成，且存有会话id，才保存本轮对话
+        # 只有正常完成，且存有session_id，才保存本轮对话
         if completed and session_id:
-            answer="".join(answer_parts).strip()
-
-        # 5.只有正常生成关闭后，才保存本轮对话
-        if session_id:
             answer="".join(answer_parts).strip()
 
             # 空回答不存入历史
             if answer:
-                if self.db is not None:
-                    turn_message=messages+[
-                        Message(role="assistant",content=answer)
-                    ]
+                turn_messages = messages + [
+                    Message(role="assistant", content=answer)
+                ]
 
+                if self.db is not None:
+                    #postgreSQL:批量保存本轮用户消息和AI消息
                     create_messages(
                         db=self.db,
                         session_id=session_id,
-                        messages=turn_message
+                        messages=turn_messages
                     )
 
                 else:

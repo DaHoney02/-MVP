@@ -1,0 +1,36 @@
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: little-aftercare-postgres
+    restart: unless-stopped
+
+    # 宿主机使用 5433，容器内部仍使用 PostgreSQL 默认端口 5432。
+    # 这样可以降低与本机已有 PostgreSQL 服务发生端口冲突的概率。
+    ports:
+      - "5433:5432"
+
+    # 从项目根目录的 .env 读取数据库配置，不把密码写进 Compose 文件。
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Please set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Please set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Please set POSTGRES_DB in .env}
+      TZ: Asia/Shanghai
+
+    # 使用命名卷持久化数据库文件。
+    # 删除或重建容器时，数据不会因为容器本身被删除而丢失。
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    # 容器启动后持续检查数据库是否已经可以接受连接。
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:
